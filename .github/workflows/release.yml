@@ -1,0 +1,25 @@
+
+name: Release
+
+on: push
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+
+      - name: Install Node/NPM
+        uses: actions/setup-node@v1
+        with:
+          node-version: 15
+          
+      - name: Build and release app
+        uses: samuelmeuli/action-electron-builder@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          # If the commit is tagged with a version (e.g. "v1.0.0"),
+          # release the app after building
+          release: ${{ startsWith(github.ref, 'refs/tags/v') }}
