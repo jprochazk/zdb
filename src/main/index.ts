@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, remote } from 'electron';
 import url from 'url';
 import path from 'path';
 import updateApp from "./updater";
@@ -26,7 +26,7 @@ function createMainWindow(): BrowserWindow {
         }
     });
 
-    if (true || process.env.MODE !== 'production') {
+    if (process.env.MODE !== 'production') {
         window.webContents.openDevTools();
     }
 
@@ -47,6 +47,14 @@ function createMainWindow(): BrowserWindow {
 
     return window;
 }
+
+remote.globalShortcut.register("CommandOrControl+Shift+I", () => {
+    remote.BrowserWindow.getFocusedWindow()?.webContents.openDevTools();
+});
+
+window.addEventListener("beforeunload", () => {
+    remote.globalShortcut.unregisterAll();
+});
 
 (async function () {
     await app.whenReady();
