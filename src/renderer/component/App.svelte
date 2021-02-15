@@ -7,6 +7,8 @@
         "/search": Search,
         "/upload": Upload,
     };
+
+    console.log(`ZDB loaded.`);
 </script>
 
 <div class="no-overflow">

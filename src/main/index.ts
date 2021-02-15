@@ -1,7 +1,7 @@
-import { app, BrowserWindow, remote } from 'electron';
+import { app, BrowserWindow, globalShortcut } from 'electron';
 import url from 'url';
 import path from 'path';
-import updateApp from "./updater";
+import updateApp from './updater';
 
 function getAssetURL(asset: string): string {
     if (process.env.NODE_ENV === "production") {
@@ -18,7 +18,7 @@ function getAssetURL(asset: string): string {
 let mainWindow: BrowserWindow | null | undefined;
 
 function createMainWindow(): BrowserWindow {
-    const window = new BrowserWindow({
+    const w = new BrowserWindow({
         title: process.env.npm_package_name,
         webPreferences: {
             nodeIntegration: true,
@@ -27,37 +27,28 @@ function createMainWindow(): BrowserWindow {
     });
 
     if (process.env.MODE !== 'production') {
-        window.webContents.openDevTools();
+        w.webContents.openDevTools();
     }
 
-    window.setMenu(null);
+    w.setMenu(null);
 
-    window.loadURL(getAssetURL('index.html'));
+    w.loadURL(getAssetURL('index.html'));
 
-    window.on('closed', (): void => {
+    w.on('closed', (): void => {
         mainWindow = null;
     });
 
-    window.webContents.on('devtools-opened', (): void => {
-        window.focus();
+    w.webContents.on('devtools-opened', (): void => {
+        w.focus();
         setImmediate((): void => {
-            window.focus();
+            w.focus();
         });
     });
 
-    return window;
+    return w;
 }
 
-remote.globalShortcut.register("CommandOrControl+Shift+I", () => {
-    remote.BrowserWindow.getFocusedWindow()?.webContents.openDevTools();
-});
-
-window.addEventListener("beforeunload", () => {
-    remote.globalShortcut.unregisterAll();
-});
-
-(async function () {
-    await app.whenReady();
+; (async function () {
 
     const instanceLock = app.requestSingleInstanceLock();
     if (!instanceLock) {
@@ -81,8 +72,16 @@ window.addEventListener("beforeunload", () => {
         // create main BrowserWindow when electron is ready
         app.on('ready', (): void => {
             mainWindow = createMainWindow();
+
+            globalShortcut.register("CommandOrControl+Shift+I", () => {
+                mainWindow?.webContents.openDevTools();
+            });
+
+            updateApp();
         });
 
-        await updateApp();
+        app.on('before-quit', () => {
+            globalShortcut.unregisterAll();
+        })
     }
 })();

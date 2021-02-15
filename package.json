@@ -4,12 +4,13 @@
     "private": true,
     "license": "MIT",
     "author": "Jan Procházka",
+    "description": "Databáze datových zpráv",
     "scripts": {
         "build": "electron-snowpack build",
         "clean": "electron-snowpack clean",
         "dev": "electron-snowpack dev",
         "dist": "electron-builder",
-        "package": "npm run build && npm run dist"
+        "test-package": "npm run build && npm run dist"
     },
     "dependencies": {
         "@lapo/extractcms": "^1.0.4",
