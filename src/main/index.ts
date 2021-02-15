@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import url from 'url';
 import path from 'path';
+import updateApp from "./updater";
 
 function getAssetURL(asset: string): string {
     if (process.env.NODE_ENV === "production") {
@@ -25,7 +26,7 @@ function createMainWindow(): BrowserWindow {
         }
     });
 
-    if (process.env.MODE !== 'production') {
+    if (true || process.env.MODE !== 'production') {
         window.webContents.openDevTools();
     }
 
@@ -47,27 +48,33 @@ function createMainWindow(): BrowserWindow {
     return window;
 }
 
-const instanceLock = app.requestSingleInstanceLock();
-if (!instanceLock) {
-    app.quit();
-} else {
-    // quit application when all windows are closed
-    app.on('window-all-closed', (): void => {
-        // on macOS it is common for applications to stay open until the user explicitly quits
-        if (process.platform !== 'darwin') {
-            app.quit();
-        }
-    });
+(async function () {
+    await app.whenReady();
 
-    app.on('activate', (): void => {
-        // on macOS it is common to re-create a window even after all windows have been closed
-        if (mainWindow === null) {
+    const instanceLock = app.requestSingleInstanceLock();
+    if (!instanceLock) {
+        app.quit();
+    } else {
+        // quit application when all windows are closed
+        app.on('window-all-closed', (): void => {
+            // on macOS it is common for applications to stay open until the user explicitly quits
+            if (process.platform !== 'darwin') {
+                app.quit();
+            }
+        });
+
+        app.on('activate', (): void => {
+            // on macOS it is common to re-create a window even after all windows have been closed
+            if (mainWindow === null) {
+                mainWindow = createMainWindow();
+            }
+        });
+
+        // create main BrowserWindow when electron is ready
+        app.on('ready', (): void => {
             mainWindow = createMainWindow();
-        }
-    });
+        });
 
-    // create main BrowserWindow when electron is ready
-    app.on('ready', (): void => {
-        mainWindow = createMainWindow();
-    });
-}
+        await updateApp();
+    }
+})();
