@@ -76,8 +76,6 @@ function createMainWindow(): BrowserWindow {
             globalShortcut.register("CommandOrControl+Shift+I", () => {
                 mainWindow?.webContents.openDevTools();
             });
-
-            updateApp();
         });
 
         app.on('before-quit', () => {
