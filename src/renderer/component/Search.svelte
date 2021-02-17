@@ -4,7 +4,7 @@
     import { Message, getWords } from "~/renderer/db";
 
     // Generators for test data
-    /* function randomDigits(count: number) {
+    function randomDigits(count: number) {
         // minimum is 1 digit
         count = count < 1 ? 1 : count;
         let min = parseInt("1" + "0".repeat(count - 1)),
@@ -28,10 +28,7 @@
             new Array(5).fill(`file_from_${uid}.pdf`)
         );
     }
-    let results: Message[] = new Array(50)
-        .fill(null)
-        .map((v) => randomMessage());
-    const update = () => {}; */
+    const testResults = new Array(45).fill(null).map((_) => randomMessage());
 
     const format = {
         _dts: new Intl.DateTimeFormat("cs-CZ", {
@@ -66,43 +63,94 @@
     let form = {
         recipient: "",
         sender: "",
+        annotation: "",
     };
     let formChanged = true;
     let results: Message[] = [];
-    const update = () => ((formChanged = true), void 0);
+    const updateForm = () => ((formChanged = true), void 0);
 
     // selected message - displayed in a modal
     let selected: Message | null = null;
     const select = (result: Message) => ((selected = result), void 0);
     const deselect = () => ((selected = null), void 0);
 
+    const escapeListener = (e: KeyboardEvent) => (
+        console.log(e), e.code === "Escape" && deselect()
+    );
+
+    const pageSize = 10;
+    let page = 0;
+    let numPages = 0;
+    let currentPage: Message[] = [];
+    function goto(v: number) {
+        if (v > -1 && v < Math.ceil(results.length / pageSize)) {
+            page = v;
+            let remaining = results.slice(page * pageSize);
+            if (remaining.length > pageSize) {
+                remaining = remaining.slice(0, pageSize);
+            }
+            currentPage = remaining;
+        }
+    }
+
+    function intersection(a: string[], b: string[]): boolean {
+        return a.some((_a) =>
+            b.some((_b) => _b.startsWith(_a) || _a.startsWith(_b))
+        );
+    }
+
     // interval ID so we can clear it on component destruction
     let updateInterval: NodeJS.Timeout;
     onMount(() => {
+        window.addEventListener("keyup", escapeListener);
         // search results update every 250ms
         // but ONLY if the form fields have changed
         updateInterval = setInterval(async () => {
-            if (!formChanged) return;
-            formChanged = false;
+            if (formChanged) {
+                formChanged = false;
 
-            // TODO: paging
-            // search for all messages which include "form.recipient"
-            //  - if form.recipient is empty, this returns all messages
-            let tempResults = Message.byRecipientName(form.recipient).limit(10);
-            // if we have a non-empty sender field,
-            //  - filter the result based on whether or not the sender appears in them
-            if (form.sender.length > 0) {
-                const senderName = getWords(form.sender.toLowerCase());
-                const predicate = (msg: Message) =>
-                    msg.senderNameWords.some((word) =>
-                        senderName.includes(word)
+                // TODO: paging
+                // search for all messages which include "form.recipient"
+                //  - if form.recipient is empty, this returns all messages
+                /* let tempResults = Message.byRecipientName(form.recipient).limit(100); */
+                let tempResults =
+                    form.recipient.length > 0
+                        ? testResults.filter((msg) =>
+                              intersection(
+                                  msg.recipientNameWords,
+                                  getWords(form.recipient.toLowerCase())
+                              )
+                          )
+                        : testResults;
+                // if we have a non-empty sender field,
+                //  - filter the result based on whether or not the sender appears in them
+                if (form.sender.length > 0) {
+                    tempResults = tempResults.filter((msg) =>
+                        intersection(
+                            msg.senderNameWords,
+                            getWords(form.sender.toLowerCase())
+                        )
                     );
-                tempResults = tempResults.filter(predicate);
+                }
+                // if we have a non-empty annotation field,
+                //  - same story
+                if (form.annotation.length > 0) {
+                    tempResults = tempResults.filter((msg) =>
+                        intersection(
+                            msg.annotationWords,
+                            getWords(form.annotation.toLowerCase())
+                        )
+                    );
+                }
+                /* results = await tempResults.toArray(); */
+                results = tempResults;
+                numPages = Math.ceil(results.length / pageSize);
+                goto(0);
             }
-            results = await tempResults.toArray();
         }, 250);
     });
     onDestroy(() => {
+        window.removeEventListener("keyup", escapeListener);
         clearInterval(updateInterval);
     });
 </script>
@@ -122,7 +170,7 @@
         >
             <div class="row left">
                 <div class="col s2 item-space">
-                    <span class="hint">Popis:</span>
+                    <span class="hint">Předmět:</span>
                 </div>
                 <div class="col s10 item-space">
                     <b>{selected.annotation}</b>
@@ -175,7 +223,7 @@
 <div class="search">
     <form>
         <div class="row">
-            <div class="row col s6 m6 l6 xl6">
+            <div class="row col s4 m4 l4 xl4">
                 <label for="recipient">Příjemce</label>
                 <input
                     id="recipient"
@@ -186,10 +234,10 @@
                     spellcheck={false}
                     type="search"
                     bind:value={form.recipient}
-                    on:input={update}
+                    on:input={updateForm}
                 />
             </div>
-            <div class="row col s6 m6 l6 xl6">
+            <div class="row col s4 m4 l4 xl4">
                 <label for="sender">Odesílatel</label>
                 <input
                     id="sender"
@@ -200,7 +248,21 @@
                     spellcheck={false}
                     type="search"
                     bind:value={form.sender}
-                    on:input={update}
+                    on:input={updateForm}
+                />
+            </div>
+            <div class="row col s4 m4 l4 xl4">
+                <label for="sender">Předmět</label>
+                <input
+                    id="sender"
+                    class="col"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck={false}
+                    type="search"
+                    bind:value={form.annotation}
+                    on:input={updateForm}
                 />
             </div>
         </div>
@@ -217,7 +279,7 @@
                 </tr>
             </thead>
             <tbody>
-                {#each results as result}
+                {#each currentPage as result}
                     <tr
                         class="hoverable"
                         on:click={select.bind(undefined, result)}
@@ -233,9 +295,45 @@
             </tbody>
         </table>
     </div>
+    <div class="paging">
+        <div class="row">
+            <ul class="pagination noselect">
+                <li class:disabled={page - 1 < 0}>
+                    <!-- svelte-ignore a11y-missing-attribute -->
+                    <a style="cursor:pointer" on:click={() => goto(page + 1)}>
+                        <i class="material-icons">chevron_left</i>
+                    </a>
+                </li>
+                {#each new Array(numPages) as _, p}
+                    <li
+                        class:active={p === page}
+                        class:waves-effect={p !== page}
+                        on:click={() => goto(p)}
+                    >
+                        <!-- svelte-ignore a11y-missing-attribute -->
+                        <a style="cursor:pointer">{p + 1}</a>
+                    </li>
+                {/each}
+                <li class:disabled={page + 1 >= numPages}>
+                    <!-- svelte-ignore a11y-missing-attribute -->
+                    <a
+                        class="noselect"
+                        style="cursor:pointer"
+                        on:click={() => goto(page + 1)}
+                    >
+                        <i class="material-icons">chevron_right</i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
 </div>
 
 <style>
+    .noselect {
+        user-select: none;
+    }
+
     form {
         height: 120px;
     }
@@ -275,7 +373,7 @@
     }
 
     div.table-wrapper {
-        height: calc(100% - 120px);
+        height: calc(100% - 200px);
     }
     tbody {
         display: block;

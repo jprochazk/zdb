@@ -1,7 +1,11 @@
 <script lang="typescript">
-    import Router, { location } from "svelte-spa-router";
+    import Router, { location, push } from "svelte-spa-router";
     import Upload from "./Upload.svelte";
     import Search from "./Search.svelte";
+
+    if ($location === "/") {
+        push("/search");
+    }
 
     const routes = {
         "/search": Search,

@@ -2,6 +2,7 @@ import { app, BrowserWindow, globalShortcut } from 'electron';
 import url from 'url';
 import path from 'path';
 import updateApp from './updater';
+import * as WState from "./wstate";
 
 function getAssetURL(asset: string): string {
     if (process.env.NODE_ENV === "production") {
@@ -23,8 +24,11 @@ function createMainWindow(): BrowserWindow {
         webPreferences: {
             nodeIntegration: true,
             nodeIntegrationInWorker: true,
-        }
+        },
+        ...WState.get(process.env.npm_package_name!)
     });
+    w.on("close", () => WState.save(w));
+    w.maximizable = false;
 
     if (process.env.MODE !== 'production') {
         w.webContents.openDevTools();

@@ -37,8 +37,9 @@ const schema = {
         recipientName,
         *recipientNameWords,
         deliveredAt,
-        acceptedAt`
-    //  annotation
+        acceptedAt,
+        annotation,
+        *annotationWords`
     //  *files
 };
 
@@ -49,7 +50,9 @@ export class Database extends Dexie {
     private static instance: Database | null = null;
     private constructor() {
         super("zdb");
-        this.version(1).stores(schema);
+        this.version(2).stores(schema).upgrade(tx => tx.table("message").toCollection().modify(message => {
+            message.annotationWords = getWords(message.annotation);
+        }));
 
         this.person = this.table("person");
         this.person.mapToClass(Person);
@@ -223,6 +226,7 @@ export class Message {
     recipientName: string;
     recipientNameWords: string[];
     annotation: string;
+    annotationWords: string[];
     deliveredAt: number;
     receivedAt: number;
     files: string[];
@@ -246,6 +250,7 @@ export class Message {
         this.recipientName = recipientName;
         this.recipientNameWords = getWords(recipientName.toLowerCase());
         this.annotation = annotation;
+        this.annotationWords = getWords(annotation.toLowerCase());
         this.deliveredAt = deliveredAt;
         this.receivedAt = receivedAt;
         this.files = files;

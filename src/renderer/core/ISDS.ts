@@ -50,7 +50,7 @@ const d = (el: Element, name: string) => {
 const va = (el: Element, name: string) => [...el.getElementsByTagName(name)];
 const a = (el: Element, key: string) => el.getAttribute(key);
 
-export async function handle(file: PendingFile) {
+export async function handle(file: PendingFile): Promise<void | string> {
     console.log(`Processing ${file.name}`);
     const data = await CMS.extract(file.path);
 
@@ -92,7 +92,7 @@ export async function handle(file: PendingFile) {
 
     // create directory for storing this document's embedded content
     const base = path.join(cachedir, processed.uid!);
-    if (await exists(base)) return console.warn(`File '${file.name}' is already uploaded`);
+    if (await exists(base)) return console.warn(`Dokument '${file.name}' už je uložený`);
     console.log(`mkdir ${base}`);
     await fsp.mkdir(base);
 
