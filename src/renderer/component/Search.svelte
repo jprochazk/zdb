@@ -4,7 +4,7 @@
     import { Message, getWords } from "~/renderer/db";
 
     // Generators for test data
-    function randomDigits(count: number) {
+    /* function randomDigits(count: number) {
         // minimum is 1 digit
         count = count < 1 ? 1 : count;
         let min = parseInt("1" + "0".repeat(count - 1)),
@@ -28,7 +28,7 @@
             new Array(5).fill(`file_from_${uid}.pdf`)
         );
     }
-    const testResults = new Array(45).fill(null).map((_) => randomMessage());
+    const testResults = new Array(45).fill(null).map((_) => randomMessage()); */
 
     const format = {
         _dts: new Intl.DateTimeFormat("cs-CZ", {
@@ -112,8 +112,8 @@
                 // TODO: paging
                 // search for all messages which include "form.recipient"
                 //  - if form.recipient is empty, this returns all messages
-                /* let tempResults = Message.byRecipientName(form.recipient).limit(100); */
-                let tempResults =
+                let tempResults = Message.byRecipientName(form.recipient).limit(100);
+                /* let tempResults =
                     form.recipient.length > 0
                         ? testResults.filter((msg) =>
                               intersection(
@@ -121,7 +121,7 @@
                                   getWords(form.recipient.toLowerCase())
                               )
                           )
-                        : testResults;
+                        : testResults; */
                 // if we have a non-empty sender field,
                 //  - filter the result based on whether or not the sender appears in them
                 if (form.sender.length > 0) {
@@ -142,8 +142,8 @@
                         )
                     );
                 }
-                /* results = await tempResults.toArray(); */
-                results = tempResults;
+                results = await tempResults.toArray();
+                /* results = tempResults; */
                 numPages = Math.ceil(results.length / pageSize);
                 goto(0);
             }
