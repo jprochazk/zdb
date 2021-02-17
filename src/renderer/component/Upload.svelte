@@ -5,10 +5,19 @@
 
     const SPINNER = import.meta.env.SNOWPACK_PUBLIC_BASE_HREF + "/loader.gif";
     const TICK = import.meta.env.SNOWPACK_PUBLIC_BASE_HREF + "/tick.png";
-    let HREF = SPINNER;
+    let uri = SPINNER;
     let hidden = true;
 
     let pending = 0;
+    function finish() {
+        pending -= 1;
+        if (pending === 0) {
+            uri = TICK;
+            setTimeout(() => {
+                hidden = true;
+            }, 1500);
+        }
+    }
     function handleFile(event: DropEvent) {
         for (const file of event.detail.files) {
             const pendingFile = {
@@ -16,17 +25,9 @@
                 path: file.path,
                 done: false,
             };
-            FileHandler.handle(pendingFile).then((_) => {
-                pending -= 1;
-                if (pending === 0) {
-                    HREF = TICK;
-                    setTimeout(() => {
-                        hidden = true;
-                    }, 1500);
-                }
-            });
+            FileHandler.handle(pendingFile).then(finish).catch(finish);
             pending += 1;
-            HREF = SPINNER;
+            uri = SPINNER;
             hidden = false;
         }
     }
@@ -39,7 +40,7 @@
                 class:fade={hidden}
                 alt="Loading spinner"
                 class="spinner"
-                src={HREF}
+                src={uri}
             />
         {/if}
     </div>

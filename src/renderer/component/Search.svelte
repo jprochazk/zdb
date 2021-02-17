@@ -112,7 +112,17 @@
                 // TODO: paging
                 // search for all messages which include "form.recipient"
                 //  - if form.recipient is empty, this returns all messages
-                let tempResults = Message.byRecipientName(form.recipient).limit(100);
+                let tempResults = Message.byRecipientName(form.recipient).limit(
+                    100
+                );
+                if (form.recipient.length > 0) {
+                    tempResults = tempResults.filter((msg) =>
+                        intersection(
+                            msg.recipientNameWords,
+                            getWords(form.recipient.toLowerCase())
+                        )
+                    );
+                }
                 /* let tempResults =
                     form.recipient.length > 0
                         ? testResults.filter((msg) =>
