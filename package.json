@@ -15,7 +15,6 @@
     "dependencies": {
         "@lapo/extractcms": "^1.0.4",
         "dexie": "^3.0.3",
-        "electron-settings": "^4.0.2",
         "electron-snowpack": "*",
         "electron-updater": "^4.3.5",
         "svelte": "^3.32.0",
